@@ -1,0 +1,86 @@
+// Prisma Client configuration
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+// Database connection configuration
+datasource db {
+  provider = "mysql"
+}
+
+// User model - represents system users (admin/author)
+model User {
+  id        Int      @id @default(autoincrement())       // Primary key
+  username  String   @unique @db.VarChar(50)           // Unique username
+  email     String   @unique @db.VarChar(100)          // Unique email
+  password  String   @db.VarChar(255)                   // Hashed password
+  role      UserRole                                     // User role (admin/author)
+  createdAt DateTime @default(now()) @map("created_at") // Account creation time
+
+  // Relations
+  articles         Article[]         // Articles written by this user
+  authorCategories AuthorCategory[] // Categories this author can write in
+
+  @@map("users") // Map to 'users' table in database
+}
+
+// Category model - represents article categories
+model Category {
+  id          Int     @id @default(autoincrement())  // Primary key
+  name        String  @unique @db.VarChar(50)      // Unique category name
+  description String? @db.Text                  // Optional description
+
+  // Relations
+  articles         Article[]         // Articles in this category
+  authorCategories AuthorCategory[] // Authors who can write in this category
+
+  @@map("categories") // Map to 'categories' table
+}
+
+// AuthorCategory model - junction table for many-to-many relationship
+// Defines which authors can write in which categories
+model AuthorCategory {
+  id         Int @id @default(autoincrement())    // Primary key
+  authorId   Int @map("author_id")              // Foreign key to User
+  categoryId Int @map("category_id")            // Foreign key to Category
+
+  // Relations
+  author   User     @relation(fields: [authorId], references: [id], onDelete: Cascade)   // Cascade delete if user is deleted
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade) // Cascade delete if category is deleted
+
+  // Ensure each author-category pair is unique
+  @@unique([authorId, categoryId], name: "unique_author_category")
+  @@map("author_categories") // Map to 'author_categories' table
+}
+
+// Article model - represents news articles
+model Article {
+  id         Int           @id @default(autoincrement())    // Primary key
+  title      String        @db.VarChar(255)             // Article title
+  content    String        @db.Text                     // Article content (full text)
+  authorId   Int           @map("author_id")             // Foreign key to User (author)
+  categoryId Int           @map("category_id")           // Foreign key to Category
+  status     ArticleStatus @default(draft)           // Article status (draft/published/unpublished)
+  createdAt  DateTime      @default(now()) @map("created_at") // Creation timestamp
+  updatedAt  DateTime      @default(now()) @updatedAt @map("updated_at") // Last update timestamp
+
+  // Relations
+  author   User     @relation(fields: [authorId], references: [id], onDelete: Cascade)   // Cascade delete if author is deleted
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade) // Cascade delete if category is deleted
+
+  @@map("articles") // Map to 'articles' table
+}
+
+// UserRole enum - defines possible user roles
+enum UserRole {
+  admin    // System administrator with full access
+  author   // Content creator with limited access
+}
+
+// ArticleStatus enum - defines possible article states
+enum ArticleStatus {
+  draft       // Article in progress, not visible to public
+  published   // Article visible to public
+  unpublished // Article hidden from public but exists
+}
