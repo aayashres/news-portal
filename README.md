@@ -79,9 +79,9 @@ database/
 ### 1. Clone and install dependencies
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/aayashres/news-portal.git
 cd news-portal
-npm install
+yarn
 ```
 
 ### 2. Create the MySQL database
@@ -132,7 +132,7 @@ And three default categories: **Business**, **Sports**, **Technology** — each 
 ### 6. Start the development server
 
 ```bash
-npm run dev | yarn dev
+yarn dev
 ```
 
 The application will be available at **http://localhost:3000**.
